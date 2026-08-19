@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_buyer
-from app.db_depends import get_async_db, get_product_by_id, update_product_rating, get_review_by_id
+from app.db_depends import get_async_db, get_product_by_id, update_product_rating
 from app.models import Review as ReviewModel, Product as ProductModel, User as UserModel, UserRole
 from app.schemas import Review as ReviewSchema, ReviewCreate
 
