@@ -98,7 +98,7 @@ async def get_current_seller(current_user: UserModel = Depends(get_current_user)
     """
     Проверяет, что пользователь имеет роль 'seller'.
     """
-    if current_user.role != UserRole.SELLER and current_user.role != UserRole.ADMIN:
+    if current_user.role != UserRole.seller and current_user.role != UserRole.admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="Только продавцы и администраторы имеют доступ")
     return current_user
@@ -108,7 +108,7 @@ async def get_current_buyer(current_user: UserModel = Depends(get_current_user))
     """
     Проверяет, что пользователь имеет роль 'buyer'.
     """
-    if current_user.role != UserRole.BUYER and current_user.role != UserRole.ADMIN:
+    if current_user.role != UserRole.buyer and current_user.role != UserRole.admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="Только покупатели и администраторы имеют доступ")
     return current_user
@@ -118,7 +118,7 @@ async def get_current_admin(current_user: UserModel = Depends(get_current_user))
     """
     Проверяет, что пользователь является администратором.
     """
-    if current_user.role != UserRole.ADMIN:
+    if current_user.role != UserRole.admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="Требуются права администратора")
     return current_user

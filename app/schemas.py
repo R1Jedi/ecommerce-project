@@ -112,14 +112,6 @@ class ReviewCreate(ReviewBase):
     product_id: Annotated[int, Field(description='Уникальный идентификатор товара')]
 
 
-class ReviewUpdate(ReviewBase):
-    """
-    Модель для обновления отзыва.
-    Используется в PUT-запросах.
-    """
-    pass
-
-
 class Review(ReviewBase):
     """
     Модель для ответа с данными отзыва.
