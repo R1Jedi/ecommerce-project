@@ -42,8 +42,8 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
                             headers={"WWW-Authenticate": "Bearer"})
     data = {"sub": user.email, "role": user.role, "id": user.id}
     access_token = create_access_token(data=data)
-    new_refresh_token = create_refresh_token(data=data)
-    return {"access_token": access_token, "refresh_token": new_refresh_token, "token_type": "bearer"}
+    refresh_token = create_refresh_token(data=data)
+    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 
 @router.post("/refresh-token")
