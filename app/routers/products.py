@@ -59,7 +59,7 @@ async def get_reviews_by_product_id(product_id: int, db: AsyncSession = Depends(
     """
     Получение всех отзывов о конкретном товаре
     """
-    await get_product_by_id(product_id, db=db)
+    await get_product_by_id(product_id, db)
 
     stmt = select(ReviewModel).join(UserModel).where(ReviewModel.product_id == product_id,
                                                      ReviewModel.is_active == True,

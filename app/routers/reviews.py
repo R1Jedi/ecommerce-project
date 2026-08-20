@@ -60,7 +60,7 @@ async def delete_review(review_id: int, current_user: UserModel = Depends(get_cu
     """
     Мягкое удаление отзыва
     """
-    review = await get_review_by_id(review_id, db=db)
+    review = await get_review_by_id(review_id, db)
 
     if current_user.role != UserRole.admin and review.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
@@ -71,7 +71,7 @@ async def delete_review(review_id: int, current_user: UserModel = Depends(get_cu
     product: ProductModel | None = await db.get(ProductModel, review.product_id)
 
     if product and product.is_active:
-        await update_product_rating(product, db=db)
+        await update_product_rating(product, db)
 
     await db.commit()
     return {"message": "Review deleted"}

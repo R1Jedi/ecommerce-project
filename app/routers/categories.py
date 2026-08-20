@@ -26,7 +26,7 @@ async def get_all_categories(db: AsyncSession = Depends(get_async_db)):
 
 @router.post("/", response_model=CategorySchema, status_code=status.HTTP_201_CREATED)
 async def create_category(category: CategoryCreate, current_user: UserModel = Depends(get_current_admin),
-                          db: AsyncSession = Depends(get_async_db)):
+                          db: AsyncSession = Depends(get_async_db)) -> CategoryModel:
     """
     Создаёт новую категорию.
     """
@@ -41,7 +41,7 @@ async def create_category(category: CategoryCreate, current_user: UserModel = De
 @router.put("/{category_id}", response_model=CategorySchema, status_code=status.HTTP_200_OK)
 async def update_category(category_updated: CategoryCreate, db_category: CategoryModel = Depends(get_category_by_id),
                           current_user: UserModel = Depends(get_current_admin),
-                          db: AsyncSession = Depends(get_async_db)):
+                          db: AsyncSession = Depends(get_async_db)) -> CategoryModel:
     """ Обновляет категорию по её ID. """
     await validate_parent_category(category_updated.parent_id, db)
 
@@ -54,7 +54,7 @@ async def update_category(category_updated: CategoryCreate, db_category: Categor
 @router.delete("/{category_id}", status_code=status.HTTP_200_OK)
 async def delete_category(category: CategoryModel = Depends(get_category_by_id),
                           current_user: UserModel = Depends(get_current_admin),
-                          db: AsyncSession = Depends(get_async_db)):
+                          db: AsyncSession = Depends(get_async_db)) -> dict:
     """
     Удаляет категорию по её ID.
     """
