@@ -72,7 +72,7 @@ class UserCreate(UserBase):
     Используется в POST и PUT запросах.
     """
     password: Annotated[SecretStr, Field(min_length=8, description="Пароль (минимум 8 символов)")]
-    role: Annotated[UserRole, Field(default=UserRole.buyer, description="Роль пользователя")]
+    role: Annotated[Literal[UserRole.buyer, UserRole.seller], Field(default=UserRole.buyer, description="Роль пользователя")]
 
 
 class User(UserBase):
