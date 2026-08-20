@@ -68,7 +68,7 @@ async def delete_review(review_id: int, current_user: UserModel = Depends(get_cu
     review.is_active = False
     await db.flush()
 
-    product: ProductModel | None = await db.get(ProductModel, review.product_id)
+    product = await db.get(ProductModel, review.product_id)
 
     if product and product.is_active:
         await update_product_rating(product, db)
