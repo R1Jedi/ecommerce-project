@@ -69,6 +69,19 @@ async def get_user_by_id(user_id: int, db: AsyncSession) -> UserModel:
     return user
 
 
+async def get_review_by_id(review_id: int, db: AsyncSession) -> ReviewModel:
+    """
+    Ищет активный отзыв по ID. Если не найден — сразу возвращает 404.
+    """
+    stmt = select(ReviewModel).where(ReviewModel.id == review_id, ReviewModel.is_active == True)
+    review = await db.scalar(stmt)
+
+    if review is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"Отзыв с ID {review_id} не найден")
+    return review
+
+
 async def validate_email_exists(email: EmailStr, db: AsyncSession) -> None:
     """
     Проверяет существование email. Если она есть — возвращает 409.

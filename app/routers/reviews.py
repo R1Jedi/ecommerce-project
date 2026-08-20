@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_buyer
-from app.db_depends import get_async_db, get_product_by_id, update_product_rating
+from app.db_depends import get_async_db, get_product_by_id, update_product_rating, get_review_by_id
 from app.models import Review as ReviewModel, Product as ProductModel, User as UserModel, UserRole
 from app.schemas import Review as ReviewSchema, ReviewCreate
 
@@ -33,7 +33,7 @@ async def create_review(review: ReviewCreate, current_user: UserModel = Depends(
     """
     Добавление отзыва
     """
-    if current_user.role == UserRole.ADMIN:
+    if current_user.role == UserRole.admin:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="Администраторы не могут оставлять отзывы к товарам")
     product = await get_product_by_id(review.product_id, db)
@@ -62,7 +62,7 @@ async def delete_review(review_id: int, current_user: UserModel = Depends(get_cu
     """
     review = await get_review_by_id(review_id, db=db)
 
-    if current_user.role != UserRole.ADMIN and review.user_id != current_user.id:
+    if current_user.role != UserRole.admin and review.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="Вы можете удалять только свои отзывы")
     review.is_active = False

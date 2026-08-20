@@ -70,7 +70,8 @@ async def get_reviews_by_product_id(product_id: int, db: AsyncSession = Depends(
 
 
 @router.get("/{product_id}", response_model=ProductSchema, status_code=status.HTTP_200_OK)
-async def get_product(product: ProductModel = Depends(get_product_by_id), db: AsyncSession = Depends(get_async_db)):
+async def get_product(product: ProductModel = Depends(get_product_by_id),
+                      db: AsyncSession = Depends(get_async_db)) -> ProductModel:
     """
     Возвращает детальную информацию о товаре по его ID.
     """
@@ -81,7 +82,7 @@ async def get_product(product: ProductModel = Depends(get_product_by_id), db: As
 @router.put("/{product_id}", response_model=ProductSchema, status_code=status.HTTP_200_OK)
 async def update_product(product_updated: ProductCreate, product: ProductModel = Depends(get_product_by_id),
                          current_user: UserModel = Depends(get_current_seller),
-                         db: AsyncSession = Depends(get_async_db)):
+                         db: AsyncSession = Depends(get_async_db)) -> ProductModel:
     """
     Обновляет товар по его ID.
     """
@@ -101,7 +102,7 @@ async def update_product(product_updated: ProductCreate, product: ProductModel =
 @router.delete("/{product_id}", status_code=status.HTTP_200_OK)
 async def delete_product(product: ProductModel = Depends(get_product_by_id),
                          current_user: UserModel = Depends(get_current_seller),
-                         db: AsyncSession = Depends(get_async_db)):
+                         db: AsyncSession = Depends(get_async_db)) -> dict:
     """
     Удаляет товар по его ID
     """
