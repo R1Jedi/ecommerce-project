@@ -51,6 +51,7 @@ class Product(ProductCreate):
     Используется в GET-запросах.
     """
     id: Annotated[int, Field(description="Уникальный идентификатор товара")]
+    rating: Annotated[int, Field(description="Рейтинг товара")]
     is_active: Annotated[bool, Field(description="Активность товара")]
 
     model_config = ConfigDict(from_attributes=True)

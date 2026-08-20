@@ -15,7 +15,7 @@ class Review(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     comment: Mapped[str | None] = mapped_column(Text, nullable=True)
-    comment_date: Mapped[datetime.datetime] = mapped_column(DateTime, default=func.now)
+    comment_date: Mapped[datetime.datetime] = mapped_column(DateTime, default=func.now())
     grade: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 

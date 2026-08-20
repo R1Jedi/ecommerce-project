@@ -27,7 +27,7 @@ async def validate_parent_category(category_id: int | None, db: AsyncSession) ->
 
         if not parent_exists:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail=f"Родительская категория с {category_id} не найдена")
+                                detail=f"Родительская категория с ID {category_id} не найдена")
 
 
 async def get_category_by_id(category_id: int, db: AsyncSession = Depends(get_async_db)) -> CategoryModel:
