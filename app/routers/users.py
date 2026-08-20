@@ -49,7 +49,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
 @router.post("/refresh-token")
 async def refresh_tokens(body: RefreshTokenRequest, db: AsyncSession = Depends(get_async_db)):
     """
-    Обновляет refresh-токен, принимая старый refresh-токен в теле запроса.
+    Обновляет access/refresh-токены, принимая старый refresh-токен в теле запроса.
     """
     user = await get_user_from_token(body.refresh_token, expected_type="refresh", db=db)
 
