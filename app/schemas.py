@@ -57,6 +57,18 @@ class Product(ProductCreate):
     model_config = ConfigDict(from_attributes=True)
 
 
+class ProductList(BaseModel):
+    """
+    Список пагинации для товаров
+    """
+    items: Annotated[list[Product], Field(description="Товары для текущей страницы")]
+    total: Annotated[int, Field(ge=0, description="Общее количество товаров")]
+    page: Annotated[int, Field(ge=1, description="Номер текущей страницы")]
+    page_size: Annotated[int, Field(ge=1, description="Количество элементов на странице")]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 # User
 class UserBase(BaseModel):
     """
