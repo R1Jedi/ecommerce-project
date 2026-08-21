@@ -10,7 +10,7 @@ class Review(Base):
     __tablename__ = 'reviews'
     __table_args__ = (
         # Один пользователь может оставить только один отзыв на конкретном товаре
-        UniqueConstraint('user_id', 'product_id', name='idx_user_product_review'),
+        UniqueConstraint('user_id', 'product_id', name='uq_user_product_review'),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
