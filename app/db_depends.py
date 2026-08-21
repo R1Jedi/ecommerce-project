@@ -103,6 +103,5 @@ async def update_product_rating(product: ProductModel | None, db: AsyncSession):
 
     stmt = select(func.avg(ReviewModel.grade)).where(ReviewModel.product_id == product.id,
                                                      ReviewModel.is_active == True)
-    result = await db.execute(stmt)
-    avg_rating = result.scalar() or 0.0
+    avg_rating = await db.scalar(stmt) or 0.0
     product.rating = round(float(avg_rating), 1)

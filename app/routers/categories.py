@@ -8,8 +8,8 @@ from app.models import Category as CategoryModel, User as UserModel
 from app.schemas import Category as CategorySchema, CategoryCreate
 
 router = APIRouter(
-    prefix='/categories',
-    tags=['categories']
+    prefix="/categories",
+    tags=["categories"]
 )
 
 

@@ -1,29 +1,45 @@
-from fastapi import APIRouter, Depends, status, HTTPException
-from sqlalchemy import select, update
+from fastapi import APIRouter, Depends, status, HTTPException, Query
+from sqlalchemy import select, update, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_seller
 from app.db_depends import get_async_db, get_product_by_id, get_category_by_id
 from app.models import Category as CategoryModel, Product as ProductModel, User as UserModel, Review as ReviewModel
-from app.schemas import Product as ProductSchema, ProductCreate, Review as ReviewSchema
+from app.schemas import Product as ProductSchema, ProductCreate, Review as ReviewSchema, ProductList
 
 router = APIRouter(
-    prefix='/products',
-    tags=['products']
+    prefix="/products",
+    tags=["products"]
 )
 
 
-@router.get("/", response_model=list[ProductSchema], status_code=status.HTTP_200_OK)
-async def get_all_products(db: AsyncSession = Depends(get_async_db)):
+@router.get("/", response_model=ProductList, status_code=status.HTTP_200_OK)
+async def get_all_products(page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=1),
+                           db: AsyncSession = Depends(get_async_db)):
     """
     Возвращает список всех товаров.
     """
-    stmt = select(ProductModel).join(CategoryModel).where(ProductModel.is_active == True,
-                                                          CategoryModel.is_active == True,
-                                                          ProductModel.stock > 0)
+    stmt = select(func.count()).select_from(ProductModel).join(CategoryModel).where(CategoryModel.is_active == True,
+                                                                                    ProductModel.is_active == True,
+                                                                                    ProductModel.stock > 0)
+    total = await db.scalar(stmt) or 0
+
+    stmt = (
+        select(ProductModel)
+        .join(CategoryModel)
+        .where(CategoryModel.is_active == True, ProductModel.is_active == True, ProductModel.stock > 0)
+        .order_by(ProductModel.id)
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
     result = await db.scalars(stmt)
-    products = result.all()
-    return products
+    items = result.all()
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size
+    }
 
 
 @router.post("/", response_model=ProductSchema, status_code=status.HTTP_201_CREATED)

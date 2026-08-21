@@ -10,8 +10,8 @@ from app.models import User as UserModel
 from app.schemas import UserCreate, User as UserSchema, RefreshTokenRequest
 
 router = APIRouter(
-    prefix='/users',
-    tags=['users']
+    prefix="/users",
+    tags=["users"]
 )
 
 

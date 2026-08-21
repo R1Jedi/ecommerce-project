@@ -40,7 +40,7 @@ def create_access_token(data: dict) -> str:
     """
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({'exp': expire, 'token_type': 'access'})
+    to_encode.update({"exp": expire, "token_type": "access"})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -50,7 +50,7 @@ def create_refresh_token(data: dict) -> str:
     """
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-    to_encode.update({'exp': expire, 'token_type': 'refresh'})
+    to_encode.update({"exp": expire, "token_type": "refresh"})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -61,12 +61,12 @@ async def get_user_from_token(token: str, expected_type: str, db: AsyncSession) 
     """
     credentials_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                                           detail="Не удалось подтвердить учетные данные",
-                                          headers={'WWW-Authenticate': 'Bearer'})
+                                          headers={"WWW-Authenticate": "Bearer"})
 
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str | None = payload.get('sub')
-        token_type: str | None = payload.get('token_type')
+        email: str | None = payload.get("sub")
+        token_type: str | None = payload.get("token_type")
 
         if email is None or token_type != expected_type:
             raise credentials_exception
@@ -74,7 +74,7 @@ async def get_user_from_token(token: str, expected_type: str, db: AsyncSession) 
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Токен просрочен",
-                            headers={'WWW-Authenticate': 'Bearer'})
+                            headers={"WWW-Authenticate": "Bearer"})
     except jwt.PyJWTError:
         raise credentials_exception
 
@@ -91,7 +91,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
     """
     Зависимость для защиты обычных эндпоинтов (требует access-токен).
     """
-    return await get_user_from_token(token, expected_type='access', db=db)
+    return await get_user_from_token(token, expected_type="access", db=db)
 
 
 async def get_current_seller(current_user: UserModel = Depends(get_current_user)) -> UserModel:

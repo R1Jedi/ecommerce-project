@@ -9,8 +9,8 @@ from app.models import Review as ReviewModel, Product as ProductModel, User as U
 from app.schemas import Review as ReviewSchema, ReviewCreate
 
 router = APIRouter(
-    prefix='/reviews',
-    tags=['reviews']
+    prefix="/reviews",
+    tags=["reviews"]
 )
 
 
