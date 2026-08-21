@@ -121,7 +121,7 @@ class Review(ReviewBase):
     id: Annotated[int, Field(description="Уникальный идентификатор отзыва")]
     user_id: Annotated[int, Field(description="Уникальный идентификатор пользователя")]
     product_id: Annotated[int, Field(description="Уникальный идентификатор товара")]
-    comment_date: datetime.datetime
+    comment_date: Annotated[datetime.datetime, Field(description="Дата создания отзыва")]
     is_active: Annotated[bool, Field(description="Активность отзыва")]
 
     model_config = ConfigDict(from_attributes=True)
