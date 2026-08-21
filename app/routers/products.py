@@ -14,7 +14,7 @@ router = APIRouter(
 
 
 @router.get("/", response_model=ProductList, status_code=status.HTTP_200_OK)
-async def get_all_products(page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=1),
+async def get_all_products(page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100),
                            db: AsyncSession = Depends(get_async_db)):
     """
     Возвращает список всех товаров.
