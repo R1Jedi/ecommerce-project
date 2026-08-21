@@ -19,9 +19,9 @@ async def get_all_products(page: int = Query(1, ge=1), page_size: int = Query(20
     """
     Возвращает список всех товаров.
     """
-    stmt = select(func.count()).select_from(ProductModel).join(CategoryModel).where(CategoryModel.is_active == True,
-                                                                                    ProductModel.is_active == True,
-                                                                                    ProductModel.stock > 0)
+    stmt = select(func.count(ProductModel.id)).join(CategoryModel).where(CategoryModel.is_active == True,
+                                                                         ProductModel.is_active == True,
+                                                                         ProductModel.stock > 0)
     total = await db.scalar(stmt) or 0
 
     stmt = (
