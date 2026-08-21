@@ -5,10 +5,12 @@ from pydantic import EmailStr
 from sqlalchemy import exists, select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Category as CategoryModel, Product as ProductModel, User as UserModel, Review as ReviewModel
+from app.models import Category as CategoryModel, Product as ProductModel, User as UserModel, Review as ReviewModel, \
+    UserRole
 from app.database import async_session_maker
 
 
+# DataBase
 async def get_async_db() -> AsyncGenerator[AsyncSession, None]:
     """
     Предоставляет асинхронную сессию SQLAlchemy для работы с базой данных PostgreSQL.
@@ -17,6 +19,7 @@ async def get_async_db() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
+# Category
 async def validate_parent_category(category_id: int | None, db: AsyncSession) -> None:
     """
     Проверяет существование родительской категории по ID.
@@ -43,6 +46,7 @@ async def get_category_by_id(category_id: int, db: AsyncSession = Depends(get_as
     return category
 
 
+# Product
 async def get_product_by_id(product_id: int, db: AsyncSession = Depends(get_async_db)) -> ProductModel:
     """
     Ищет активный товар по ID. Если не найден — сразу возвращает 404.
@@ -56,6 +60,7 @@ async def get_product_by_id(product_id: int, db: AsyncSession = Depends(get_asyn
     return product
 
 
+# User
 async def get_user_by_id(user_id: int, db: AsyncSession) -> UserModel:
     """
     Ищет активного пользователя по ID. Если не найден — сразу возвращает 404.
@@ -69,6 +74,29 @@ async def get_user_by_id(user_id: int, db: AsyncSession) -> UserModel:
     return user
 
 
+async def validate_email_exists(email: EmailStr, db: AsyncSession) -> None:
+    """
+    Проверяет существование email. Если она есть — возвращает 409.
+    """
+    stmt = select(exists().where(UserModel.email == email, UserModel.is_active == True))
+    email_exists = await db.scalar(stmt)
+
+    if email_exists:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail=f"Пользователь с email {email} уже зарегистрирован")
+
+
+async def validate_seller_by_id(seller_id: int, db: AsyncSession) -> None:
+    stmt = select(exists().where(UserModel.id == seller_id, UserModel.role == UserRole.seller,
+                                 UserModel.is_active == True))
+    seller_exists = await db.scalar(stmt)
+
+    if not seller_exists:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"Продавец с ID {seller_id} не найден")
+
+
+# Review
 async def get_review_by_id(review_id: int, db: AsyncSession) -> ReviewModel:
     """
     Ищет активный отзыв по ID. Если не найден — сразу возвращает 404.
@@ -80,18 +108,6 @@ async def get_review_by_id(review_id: int, db: AsyncSession) -> ReviewModel:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"Отзыв с ID {review_id} не найден")
     return review
-
-
-async def validate_email_exists(email: EmailStr, db: AsyncSession) -> None:
-    """
-    Проверяет существование email. Если она есть — возвращает 409.
-    """
-    stmt = select(exists().where(UserModel.email == email, UserModel.is_active == True))
-    email_exists = await db.scalar(stmt)
-
-    if email_exists:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
-                            detail=f"Пользователь с email {email} уже зарегистрирован")
 
 
 async def update_product_rating(product: ProductModel | None, db: AsyncSession):
