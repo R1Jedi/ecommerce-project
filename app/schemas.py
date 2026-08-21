@@ -59,7 +59,8 @@ class Product(ProductCreate):
 
 class ProductList(BaseModel):
     """
-    Список пагинации для товаров
+    Список пагинации для товаров.
+    Используется в GET-запросах.
     """
     items: Annotated[list[Product], Field(description="Товары для текущей страницы")]
     total: Annotated[int, Field(ge=0, description="Общее количество товаров")]
@@ -67,6 +68,20 @@ class ProductList(BaseModel):
     page_size: Annotated[int, Field(ge=1, description="Количество элементов на странице")]
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ProductFilter(BaseModel):
+    """
+    Фильтры для пагинации товаров.
+    Используется для настройки фильтрации.
+    """
+    page: Annotated[int, Field(default=1, ge=1, description="Номер страницы")]
+    page_size: Annotated[int, Field(default=1, ge=1, le=100, description="Размер страницы")]
+    category_id: Annotated[int | None, Field(default=None, description="Поиск товара по категории")]
+    min_price: Annotated[float | None, Field(default=None, ge=0, description="Минимальная цена товара")]
+    max_price: Annotated[float | None, Field(default=None, ge=0, description="Максимальная цена товара")]
+    in_stock: Annotated[bool | None, Field(default=None, description="Есть ли товар в наличии")]
+    seller_id: Annotated[int | None, Field(default=None, description="Поиск товара по продавцу")]
 
 
 # User
