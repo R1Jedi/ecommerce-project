@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_admin
 from app.db_depends import get_async_db, validate_parent_category, get_category_by_id
-from app.models import Category as CategoryModel, User as UserModel, UserRole
+from app.models import Category as CategoryModel, User as UserModel
 from app.schemas import Category as CategorySchema, CategoryCreate
 
 router = APIRouter(
