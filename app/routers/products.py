@@ -1,11 +1,13 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, status, HTTPException, Query
 from sqlalchemy import select, update, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_seller
-from app.db_depends import get_async_db, get_product_by_id, get_category_by_id
-from app.models import Category as CategoryModel, Product as ProductModel, User as UserModel, Review as ReviewModel
-from app.schemas import Product as ProductSchema, ProductCreate, Review as ReviewSchema, ProductList
+from app.db_depends import get_async_db, get_product_by_id, get_category_by_id, validate_seller_by_id
+from app.models import Product as ProductModel, User as UserModel, Review as ReviewModel
+from app.schemas import Product as ProductSchema, ProductCreate, Review as ReviewSchema, ProductList, ProductFilter
 
 router = APIRouter(
     prefix="/products",
@@ -14,31 +16,50 @@ router = APIRouter(
 
 
 @router.get("/", response_model=ProductList, status_code=status.HTTP_200_OK)
-async def get_all_products(page: int = Query(1, ge=1), page_size: int = Query(20, ge=1, le=100),
-                           db: AsyncSession = Depends(get_async_db)):
+async def get_all_products(request: Annotated[ProductFilter, Query()], db: AsyncSession = Depends(get_async_db)):
     """
-    Возвращает список всех товаров.
+    Возвращает список всех товаров с поддержкой фильтров.
     """
-    stmt = select(func.count(ProductModel.id)).join(CategoryModel).where(CategoryModel.is_active == True,
-                                                                         ProductModel.is_active == True,
-                                                                         ProductModel.stock > 0)
+    # Проверка логики min_price <= max_price
+    if request.min_price is not None and request.max_price is not None and request.min_price > request.max_price:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="min_price не может быть больше max_price")
+
+    # Формируем список фильтров
+    filters = [ProductModel.is_active == True]
+
+    if request.category_id is not None:
+        await get_category_by_id(request.category_id, db)
+        filters.append(ProductModel.category_id == request.category_id)
+    if request.min_price is not None:
+        filters.append(ProductModel.price >= request.min_price)
+    if request.max_price is not None:
+        filters.append(ProductModel.price <= request.max_price)
+    if request.in_stock is not None:
+        filters.append(ProductModel.stock > 0 if request.in_stock else ProductModel.stock == 0)
+    if request.seller_id is not None:
+        await validate_seller_by_id(request.seller_id, db)
+        filters.append(ProductModel.seller_id == request.seller_id)
+
+    # Подсчёт общего количества с учётом фильтров
+    stmt = select(func.count(ProductModel.id)).where(*filters)
     total = await db.scalar(stmt) or 0
 
+    # Выборка товаров с фильтрами и пагинацией
     stmt = (
         select(ProductModel)
-        .join(CategoryModel)
-        .where(CategoryModel.is_active == True, ProductModel.is_active == True, ProductModel.stock > 0)
+        .where(*filters)
         .order_by(ProductModel.id)
-        .offset((page - 1) * page_size)
-        .limit(page_size)
+        .offset((request.page - 1) * request.page_size)
+        .limit(request.page_size)
     )
     result = await db.scalars(stmt)
     items = result.all()
     return {
         "items": items,
         "total": total,
-        "page": page,
-        "page_size": page_size
+        "page": request.page,
+        "page_size": request.page_size
     }
 
 
@@ -55,19 +76,6 @@ async def create_product(product: ProductCreate, db: AsyncSession = Depends(get_
     await db.commit()
     await db.refresh(new_product)
     return new_product
-
-
-@router.get("/category/{category_id}", response_model=list[ProductSchema], status_code=status.HTTP_200_OK)
-async def get_products_by_category(category_id: int, db: AsyncSession = Depends(get_async_db)):
-    """
-    Возвращает список товаров в указанной категории по её ID.
-    """
-    await get_category_by_id(category_id, db)
-
-    stmt = select(ProductModel).where(ProductModel.category_id == category_id, ProductModel.is_active == True)
-    result = await db.scalars(stmt)
-    products = result.all()
-    return products
 
 
 @router.get("/{product_id}/reviews", response_model=list[ReviewSchema], status_code=status.HTTP_200_OK)
