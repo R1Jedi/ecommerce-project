@@ -44,8 +44,10 @@ async def get_all_products(request: Annotated[ProductFilter, Query()], db: Async
     if request.seller_id is not None:
         await validate_seller_by_id(request.seller_id, db)
         filters.append(ProductModel.seller_id == request.seller_id)
-    if request.created_at is not None:
-        filters.append(ProductModel.created_at >= request.created_at)
+    if request.created_after is not None:
+        filters.append(ProductModel.created_at >= request.created_after)
+    if request.created_before is not None:
+        filters.append(ProductModel.created_at <= request.created_before)
 
     # Подсчёт общего количества с учётом фильтров
     stmt = select(func.count(ProductModel.id)).where(*filters)

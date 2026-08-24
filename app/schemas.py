@@ -1,7 +1,6 @@
-import datetime
-from zoneinfo import ZoneInfo
+from datetime import datetime, date
 
-from pydantic import BaseModel, Field, ConfigDict, EmailStr, SecretStr, field_validator
+from pydantic import BaseModel, Field, ConfigDict, EmailStr, SecretStr
 from decimal import Decimal
 from typing import Annotated, Literal
 
@@ -54,18 +53,10 @@ class Product(ProductCreate):
     id: Annotated[int, Field(description="Уникальный идентификатор товара")]
     rating: Annotated[float, Field(description="Рейтинг товара")]
     is_active: Annotated[bool, Field(description="Активность товара")]
-    created_at: Annotated[datetime.datetime, Field(description="Дата добавления товара")]
-    updated_at: Annotated[datetime.datetime | None, Field(default=None, description="Дата обновления товара")]
+    created_at: Annotated[datetime, Field(description="Дата добавления товара")]
+    updated_at: Annotated[datetime | None, Field(default=None, description="Дата обновления товара")]
 
     model_config = ConfigDict(from_attributes=True)
-
-    @classmethod
-    @field_validator("created_at", "updated_at", mode="after")
-    def convert_to_msk(cls, time: datetime.datetime | None) -> datetime.datetime | None:
-        if time is None:
-            return None
-        # Переводим время в часовой пояс Москвы
-        return time.astimezone(ZoneInfo("Europe/Moscow"))
 
 
 class ProductList(BaseModel):
@@ -94,7 +85,10 @@ class ProductFilter(BaseModel):
     max_price: Annotated[float | None, Field(default=None, ge=0, description="Максимальная цена товара")]
     in_stock: Annotated[bool | None, Field(default=None, description="Есть ли товар в наличии")]
     seller_id: Annotated[int | None, Field(default=None, description="Поиск товара по продавцу")]
-    created_at: Annotated[datetime.datetime | None, Field(default=None, description="Дата добавления товара")]
+    created_after: Annotated[date | None, Field(default=None,
+                                                description="Искать товары, добавленные начиная с этой даты")]
+    created_before: Annotated[date | None, Field(default=None,
+                                                 description="Искать товары, добавленные до этой даты")]
 
 
 # User
@@ -162,7 +156,7 @@ class Review(ReviewBase):
     id: Annotated[int, Field(description="Уникальный идентификатор отзыва")]
     user_id: Annotated[int, Field(description="Уникальный идентификатор пользователя")]
     product_id: Annotated[int, Field(description="Уникальный идентификатор товара")]
-    comment_date: Annotated[datetime.datetime, Field(description="Дата создания отзыва")]
+    comment_date: Annotated[datetime, Field(description="Дата создания отзыва")]
     is_active: Annotated[bool, Field(description="Активность отзыва")]
 
     model_config = ConfigDict(from_attributes=True)
