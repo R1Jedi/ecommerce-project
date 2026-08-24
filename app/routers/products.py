@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_seller
 from app.db_depends import get_async_db, get_product_by_id, get_category_by_id, validate_seller_by_id
-from app.models import Product as ProductModel, User as UserModel, Review as ReviewModel
+from app.models import Product as ProductModel, User as UserModel, Review as ReviewModel, UserRole
 from app.schemas import Product as ProductSchema, ProductCreate, Review as ReviewSchema, ProductList, ProductFilter
 
 router = APIRouter(
@@ -44,6 +44,8 @@ async def get_all_products(request: Annotated[ProductFilter, Query()], db: Async
     if request.seller_id is not None:
         await validate_seller_by_id(request.seller_id, db)
         filters.append(ProductModel.seller_id == request.seller_id)
+    if request.created_at is not None:
+        filters.append(ProductModel.created_at >= request.created_at)
 
     # Подсчёт общего количества с учётом фильтров
     stmt = select(func.count(ProductModel.id)).where(*filters)
@@ -116,7 +118,7 @@ async def update_product(product_updated: ProductCreate, product: ProductModel =
     """
     await get_category_by_id(product_updated.category_id, db)
 
-    if product.seller_id != current_user.id:
+    if product.seller_id != current_user.id and current_user.role != UserRole.admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="Вы можете редактировать только свои товары")
 
@@ -135,7 +137,7 @@ async def delete_product(product: ProductModel = Depends(get_product_by_id),
     """
     Удаляет товар по его ID
     """
-    if product.seller_id != current_user.id:
+    if product.seller_id != current_user.id and current_user.role != UserRole.admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="Вы можете удалять только свои товары")
 

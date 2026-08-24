@@ -1,6 +1,7 @@
 import datetime
+from zoneinfo import ZoneInfo
 
-from pydantic import BaseModel, Field, ConfigDict, EmailStr, SecretStr
+from pydantic import BaseModel, Field, ConfigDict, EmailStr, SecretStr, field_validator
 from decimal import Decimal
 from typing import Annotated, Literal
 
@@ -53,8 +54,18 @@ class Product(ProductCreate):
     id: Annotated[int, Field(description="Уникальный идентификатор товара")]
     rating: Annotated[float, Field(description="Рейтинг товара")]
     is_active: Annotated[bool, Field(description="Активность товара")]
+    created_at: Annotated[datetime.datetime, Field(description="Дата добавления товара")]
+    updated_at: Annotated[datetime.datetime | None, Field(default=None, description="Дата обновления товара")]
 
     model_config = ConfigDict(from_attributes=True)
+
+    @classmethod
+    @field_validator("created_at", "updated_at", mode="after")
+    def convert_to_msk(cls, time: datetime.datetime | None) -> datetime.datetime | None:
+        if time is None:
+            return None
+        # Переводим время в часовой пояс Москвы
+        return time.astimezone(ZoneInfo("Europe/Moscow"))
 
 
 class ProductList(BaseModel):
@@ -83,6 +94,7 @@ class ProductFilter(BaseModel):
     max_price: Annotated[float | None, Field(default=None, ge=0, description="Максимальная цена товара")]
     in_stock: Annotated[bool | None, Field(default=None, description="Есть ли товар в наличии")]
     seller_id: Annotated[int | None, Field(default=None, description="Поиск товара по продавцу")]
+    created_at: Annotated[datetime.datetime | None, Field(default=None, description="Дата добавления товара")]
 
 
 # User
@@ -100,7 +112,8 @@ class UserCreate(UserBase):
     Используется в POST и PUT запросах.
     """
     password: Annotated[SecretStr, Field(min_length=8, description="Пароль (минимум 8 символов)")]
-    role: Annotated[Literal[UserRole.buyer, UserRole.seller], Field(default=UserRole.buyer, description="Роль пользователя")]
+    role: Annotated[
+        Literal[UserRole.buyer, UserRole.seller], Field(default=UserRole.buyer, description="Роль пользователя")]
 
 
 class User(UserBase):
