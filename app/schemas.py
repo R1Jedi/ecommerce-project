@@ -76,7 +76,8 @@ class ProductFilter(BaseModel):
     Используется для настройки фильтрации.
     """
     page: Annotated[int, Field(default=1, ge=1, description="Номер страницы")]
-    page_size: Annotated[int, Field(default=1, ge=1, le=100, description="Размер страницы")]
+    page_size: Annotated[int, Field(default=20, ge=1, le=100, description="Размер страницы")]
+    search: Annotated[str | None, Field(default=None, min_length=1, description="Поиск по названию товара")]
     category_id: Annotated[int | None, Field(default=None, description="Поиск товара по категории")]
     min_price: Annotated[float | None, Field(default=None, ge=0, description="Минимальная цена товара")]
     max_price: Annotated[float | None, Field(default=None, ge=0, description="Максимальная цена товара")]
