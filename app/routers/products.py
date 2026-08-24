@@ -116,7 +116,8 @@ async def update_product(product_updated: ProductCreate, product: ProductModel =
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="Вы можете редактировать только свои товары")
 
-    stmt = update(ProductModel).where(ProductModel.id == product.id).values(**product_updated.model_dump())
+    stmt = update(ProductModel).where(ProductModel.id == product.id).values(**product_updated.model_dump(),
+                                                                            updated_at=func.now())
     await db.execute(stmt)
     await db.commit()
     await db.refresh(product)
