@@ -31,7 +31,7 @@ async def get_all_products(request: Annotated[ProductFilter, Query()], db: Async
     if request.search is not None:
         search_value = request.search.strip()
         if search_value:
-            filters.append(func.lower(ProductModel.name).like(f"%{search_value.lower()}%"))
+            filters.append(ProductModel.name.ilike(f"%{search_value}%"))
     if request.category_id is not None:
         await get_category_by_id(request.category_id, db)
         filters.append(ProductModel.category_id == request.category_id)
