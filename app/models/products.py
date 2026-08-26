@@ -1,7 +1,8 @@
 import datetime
 from decimal import Decimal
 
-from sqlalchemy import Integer, String, Boolean, Numeric, Float, ForeignKey, text, DateTime, func
+from sqlalchemy import Integer, String, Boolean, Numeric, Float, ForeignKey, text, DateTime, func, Computed, Index
+from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -9,6 +10,9 @@ from app.database import Base
 
 class Product(Base):
     __tablename__ = 'products'
+    __table_args__ = (
+        Index("ix_products_tsv_gin", "tsv", postgresql_using="gin"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -21,6 +25,19 @@ class Product(Base):
                                                           server_default=func.now())
     updated_at: Mapped[datetime.datetime | None] = mapped_column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    tsv: Mapped[TSVECTOR] = mapped_column(
+        TSVECTOR,
+        Computed(
+            """
+            setweight(to_tsvector('english', coalesce(name, '')), 'A')
+            || 
+            setweight(to_tsvector('english', coalesce(description, '')), 'B')
+            """,
+            persisted=True,
+        ),
+        nullable=False,
+    )
 
     category_id: Mapped[int] = mapped_column(Integer, ForeignKey('categories.id'), nullable=False)
     seller_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'), nullable=False)

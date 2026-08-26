@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status, HTTPException, Query
-from sqlalchemy import select, update, func
+from sqlalchemy import select, update, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_seller
@@ -28,10 +28,6 @@ async def get_all_products(request: Annotated[ProductFilter, Query()], db: Async
     # Формируем список фильтров
     filters = [ProductModel.is_active == True]
 
-    if request.search is not None:
-        search_value = request.search.strip()
-        if search_value:
-            filters.append(ProductModel.name.ilike(f"%{search_value}%"))
     if request.category_id is not None:
         await get_category_by_id(request.category_id, db)
         filters.append(ProductModel.category_id == request.category_id)
@@ -49,20 +45,45 @@ async def get_all_products(request: Annotated[ProductFilter, Query()], db: Async
     if request.created_before is not None:
         filters.append(ProductModel.created_at <= request.created_before)
 
-    # Подсчёт общего количества с учётом фильтров
-    stmt = select(func.count(ProductModel.id)).where(*filters)
-    total = await db.scalar(stmt) or 0
+    # Базовый запрос total
+    total_stmt = select(func.count()).select_from(ProductModel).where(*filters)
 
-    # Выборка товаров с фильтрами и пагинацией
-    stmt = (
-        select(ProductModel)
-        .where(*filters)
-        .order_by(ProductModel.id)
-        .offset((request.page - 1) * request.page_size)
-        .limit(request.page_size)
-    )
-    result = await db.scalars(stmt)
-    items = result.all()
+    rank_col = None
+    if request.search:
+        search_value = request.search.strip()
+        if search_value:
+            ts_query = func.websearch_to_tsquery('english', search_value)
+            filters.append(ProductModel.tsv.op('@@')(ts_query))
+            rank_col = func.ts_rank_cd(ProductModel.tsv, ts_query).label("rank")
+            # total с учётом полнотекстового фильтра
+            total_stmt = select(func.count()).select_from(ProductModel).where(*filters)
+
+    total = await db.scalar(total_stmt) or 0
+
+    # Основной запрос (если есть поиск — добавим ранг в выборку и сортировку)
+    if rank_col is not None:
+        products_stmt = (
+            select(ProductModel, rank_col)
+            .where(*filters)
+            .order_by(desc(rank_col), ProductModel.id)
+            .offset((request.page - 1) * request.page_size)
+            .limit(request.page_size)
+        )
+        result = await db.execute(products_stmt)
+        rows = result.all()
+        items = [row[0] for row in rows]  # сами объекты
+        # при желании можно вернуть ранг в ответе
+        # ranks = [row.rank for row in rows]
+    else:
+        products_stmt = (
+            select(ProductModel)
+            .where(*filters)
+            .order_by(ProductModel.id)
+            .offset((request.page - 1) * request.page_size)
+            .limit(request.page_size)
+        )
+        items = (await db.scalars(products_stmt)).all()
+
     return {
         "items": items,
         "total": total,
