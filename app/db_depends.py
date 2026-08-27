@@ -125,7 +125,7 @@ async def update_product_rating(product: ProductModel | None, db: AsyncSession):
 
 
 # Cart
-async def get_cart_item(db: AsyncSession, user_id: int, product_id: int) -> CartItemModel | None:
+async def get_cart_item(user_id: int, product_id: int, db: AsyncSession) -> CartItemModel | None:
     stmt = select(CartItemModel).options(selectinload(CartItemModel.product)).where(CartItemModel.user_id == user_id,
                                                                                     CartItemModel.product_id == product_id)
     cart = await db.scalar(stmt)
