@@ -11,7 +11,6 @@ from app.models.users import UserRole
 class CategoryCreate(BaseModel):
     """
     Модель для создания и обновления категории.
-    Используется в POST и PUT запросах.
     """
     name: Annotated[str, Field(min_length=3, max_length=50,
                                description="Название категории (3-50 символов)")]
@@ -21,7 +20,6 @@ class CategoryCreate(BaseModel):
 class Category(CategoryCreate):
     """
     Модель для ответа с данными категории.
-    Используется в GET-запросах.
     """
     id: Annotated[int, Field(description="Уникальный идентификатор категории")]
     is_active: Annotated[bool, Field(description="Активность категории")]
@@ -33,7 +31,6 @@ class Category(CategoryCreate):
 class ProductCreate(BaseModel):
     """
     Модель для создания и обновления товара.
-    Используется в POST и PUT запросах.
     """
     name: Annotated[str, Field(min_length=3, max_length=100,
                                description="Название товара (3-100 символов)")]
@@ -48,7 +45,6 @@ class ProductCreate(BaseModel):
 class Product(ProductCreate):
     """
     Модель для ответа с данными товара.
-    Используется в GET-запросах.
     """
     id: Annotated[int, Field(description="Уникальный идентификатор товара")]
     rating: Annotated[float, Field(description="Рейтинг товара")]
@@ -62,7 +58,6 @@ class Product(ProductCreate):
 class ProductList(BaseModel):
     """
     Список пагинации для товаров.
-    Используется в GET-запросах.
     """
     items: Annotated[list[Product], Field(description="Товары для текущей страницы")]
     total: Annotated[int, Field(ge=0, description="Общее количество товаров")]
@@ -75,7 +70,6 @@ class ProductList(BaseModel):
 class ProductFilter(BaseModel):
     """
     Фильтры для пагинации товаров.
-    Используется для настройки фильтрации.
     """
     page: Annotated[int, Field(default=1, ge=1, description="Номер страницы")]
     page_size: Annotated[int, Field(default=20, ge=1, le=100, description="Размер страницы")]
@@ -103,7 +97,6 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     """
     Модель для создания и обновления пользователя.
-    Используется в POST и PUT запросах.
     """
     password: Annotated[SecretStr, Field(min_length=8, description="Пароль (минимум 8 символов)")]
     role: Annotated[
@@ -113,7 +106,6 @@ class UserCreate(UserBase):
 class User(UserBase):
     """
     Модель для ответа с данными пользователя.
-    Используется в GET-запросах.
     """
     id: Annotated[int, Field(description="Уникальный идентификатор пользователя")]
     is_active: Annotated[bool, Field(description="Активность пользователя")]
@@ -143,7 +135,6 @@ class ReviewBase(BaseModel):
 class ReviewCreate(ReviewBase):
     """
     Модель для создания отзыва.
-    Используется в POST-запросах.
     """
     product_id: Annotated[int, Field(description='Уникальный идентификатор товара')]
 
@@ -151,12 +142,50 @@ class ReviewCreate(ReviewBase):
 class Review(ReviewBase):
     """
     Модель для ответа с данными отзыва.
-    Используется в GET-запросах.
     """
     id: Annotated[int, Field(description="Уникальный идентификатор отзыва")]
     user_id: Annotated[int, Field(description="Уникальный идентификатор пользователя")]
     product_id: Annotated[int, Field(description="Уникальный идентификатор товара")]
     comment_date: Annotated[datetime, Field(description="Дата создания отзыва")]
     is_active: Annotated[bool, Field(description="Активность отзыва")]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# CartItem
+class CartItemBase(BaseModel):
+    """
+    Базовая модель с общими полями для корзин.
+    Сама по себе в роутерах не используется.
+    """
+    product_id: int = Field(description="ID товара")
+    quantity: int = Field(ge=1, description="Количество товара")
+
+
+class CartItemCreate(CartItemBase):
+    """Модель для добавления нового товара в корзину."""
+    pass
+
+
+class CartItemUpdate(BaseModel):
+    """Модель для обновления количества товара в корзине."""
+    quantity: int = Field(ge=1, description="Новое количество товара")
+
+
+class CartItem(BaseModel):
+    """Товар в корзине с данными продукта."""
+    id: int = Field(description="ID позиции корзины")
+    quantity: int = Field(ge=1, description="Количество товара")
+    product: Product = Field(description="Информация о товаре")
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class Cart(BaseModel):
+    """Полная информация о корзине пользователя."""
+    user_id: int = Field(description="ID пользователя")
+    items: list[CartItem] = Field(default_factory=list, description="Содержимое корзины")
+    total_quantity: int = Field(ge=0, description="Общее количество товаров")
+    total_price: Decimal = Field(ge=0, description="Общая стоимость товаров")
 
     model_config = ConfigDict(from_attributes=True)
