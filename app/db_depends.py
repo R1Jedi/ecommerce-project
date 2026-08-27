@@ -4,9 +4,10 @@ from fastapi import Depends, HTTPException, status
 from pydantic import EmailStr
 from sqlalchemy import exists, select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models import Category as CategoryModel, Product as ProductModel, User as UserModel, Review as ReviewModel, \
-    UserRole
+    UserRole, CartItem as CartItemModel
 from app.database import async_session_maker
 
 
@@ -121,3 +122,11 @@ async def update_product_rating(product: ProductModel | None, db: AsyncSession):
                                                      ReviewModel.is_active == True)
     avg_rating = await db.scalar(stmt) or 0.0
     product.rating = round(float(avg_rating), 1)
+
+
+# Cart
+async def get_cart_item(db: AsyncSession, user_id: int, product_id: int) -> CartItemModel | None:
+    stmt = select(CartItemModel).options(selectinload(CartItemModel.product)).where(CartItemModel.user_id == user_id,
+                                                                                    CartItemModel.product_id == product_id)
+    cart = await db.scalar(stmt)
+    return cart
