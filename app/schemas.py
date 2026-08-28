@@ -1,5 +1,6 @@
 from datetime import datetime, date
 
+from fastapi import Form
 from pydantic import BaseModel, Field, ConfigDict, EmailStr, SecretStr
 from decimal import Decimal
 from typing import Annotated, Literal
@@ -37,9 +38,21 @@ class ProductCreate(BaseModel):
     description: Annotated[str | None, Field(default=None, max_length=500,
                                              description="Описание товара (до 500 символов)")]
     price: Annotated[Decimal, Field(gt=0, description="Цена товара (больше 0)", decimal_places=2)]
-    image_url: Annotated[str | None, Field(default=None, max_length=200, description="URL изображения товара")]
     stock: Annotated[int, Field(ge=0, description="Количество товара на складе (0 или больше)")]
     category_id: Annotated[int, Field(description="ID категории, к которой относится товар")]
+
+    @classmethod
+    def as_form(cls, name: Annotated[str, Form(...)], price: Annotated[Decimal, Form(...)],
+                stock: Annotated[int, Form(...)],
+                category_id: Annotated[int, Form(...)],
+                description: Annotated[str | None, Form()] = None) -> "ProductCreate":
+        return cls(
+            name=name,
+            description=description,
+            price=price,
+            stock=stock,
+            category_id=category_id
+        )
 
 
 class Product(ProductCreate):

@@ -1,11 +1,12 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status, HTTPException, Query
+from fastapi import APIRouter, Depends, status, HTTPException, Query, UploadFile, File
 from sqlalchemy import select, update, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_seller
-from app.db_depends import get_async_db, get_product_by_id, get_category_by_id, validate_seller_by_id
+from app.db_depends import get_async_db, get_product_by_id, get_category_by_id, validate_seller_by_id, \
+    save_product_image, remove_product_image
 from app.models import Product as ProductModel, User as UserModel, Review as ReviewModel, UserRole
 from app.schemas import Product as ProductSchema, ProductCreate, Review as ReviewSchema, ProductList, ProductFilter
 
@@ -93,14 +94,17 @@ async def get_all_products(request: Annotated[ProductFilter, Query()], db: Async
 
 
 @router.post("/", response_model=ProductSchema, status_code=status.HTTP_201_CREATED)
-async def create_product(product: ProductCreate, db: AsyncSession = Depends(get_async_db),
-                         current_user: UserModel = Depends(get_current_seller)):
+async def create_product(product: ProductCreate = Depends(ProductCreate.as_form), image: UploadFile | None = File(None),
+                         current_user: UserModel = Depends(get_current_seller),
+                         db: AsyncSession = Depends(get_async_db)):
     """
     Создаёт новый товар.
     """
     await get_category_by_id(product.category_id, db)
 
-    new_product = ProductModel(**product.model_dump(), seller_id=current_user.id)
+    image_url = await save_product_image(image) if image else None
+
+    new_product = ProductModel(**product.model_dump(), seller_id=current_user.id, image_url=image_url)
     db.add(new_product)
     await db.commit()
     await db.refresh(new_product)
@@ -133,7 +137,9 @@ async def get_product(product: ProductModel = Depends(get_product_by_id),
 
 
 @router.put("/{product_id}", response_model=ProductSchema, status_code=status.HTTP_200_OK)
-async def update_product(product_updated: ProductCreate, product: ProductModel = Depends(get_product_by_id),
+async def update_product(product_updated: ProductCreate = Depends(ProductCreate.as_form),
+                         product: ProductModel = Depends(get_product_by_id),
+                         image: UploadFile | None = File(None),
                          current_user: UserModel = Depends(get_current_seller),
                          db: AsyncSession = Depends(get_async_db)) -> ProductModel:
     """
@@ -148,6 +154,11 @@ async def update_product(product_updated: ProductCreate, product: ProductModel =
     stmt = update(ProductModel).where(ProductModel.id == product.id).values(**product_updated.model_dump(),
                                                                             updated_at=func.now())
     await db.execute(stmt)
+
+    if image:
+        remove_product_image(product.image_url)
+        product.image_url = await save_product_image(image)
+
     await db.commit()
     await db.refresh(product)
     return product
@@ -164,6 +175,8 @@ async def delete_product(product: ProductModel = Depends(get_product_by_id),
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="Вы можете удалять только свои товары")
 
+    remove_product_image(product.image_url)
     product.is_active = False
+    product.image_url = None
     await db.commit()
     return {"status": "success", "message": "Товар переведен в статус неактивного"}
