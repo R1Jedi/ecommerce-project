@@ -17,3 +17,97 @@ router = APIRouter(
     tags=["orders"]
 )
 
+
+@router.post("/checkout", response_model=OrderSchema, status_code=status.HTTP_201_CREATED)
+async def checkout_order(current_user: UserModel = Depends(get_current_user), db: AsyncSession = Depends(get_async_db)):
+    """
+    Создаёт заказ на основе текущей корзины пользователя.
+    Сохраняет позиции заказа, вычитает остатки и очищает корзину.
+    """
+    cart_result = await db.scalars(
+        select(CartItemModel)
+        .options(selectinload(CartItemModel.product))
+        .where(CartItemModel.user_id == current_user.id)
+        .order_by(CartItemModel.id)
+    )
+    cart_items = cart_result.all()
+
+    if not cart_items:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Корзина пуста")
+
+    order = OrderModel(user_id=current_user.id)
+    total_amount = Decimal("0")
+
+    for cart_item in cart_items:
+        product = cart_item.product
+        if not product.is_active:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=f"Продукт с ID {cart_item.product_id} неактивен")
+        if product.stock < cart_item.quantity:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=f"Недостаточное количество {product.name} для заказа")
+
+        unit_price = product.price
+        total_price = unit_price * cart_item.quantity
+        total_amount += total_price
+
+        order_item = OrderItemModel(
+            product_id=cart_item.product_id,
+            quantity=cart_item.quantity,
+            unit_price=unit_price,
+            total_price=total_price,
+        )
+        order.items.append(order_item)
+
+        product.stock -= cart_item.quantity
+
+    order.total_amount = total_amount
+    db.add(order)
+
+    await db.execute(delete(CartItemModel).where(CartItemModel.user_id == current_user.id))
+    await db.commit()
+
+    created_order = await load_order_with_items(order.id, db)
+
+    if not created_order:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="Ошибка загрузки созданного заказа")
+    return created_order
+
+
+@router.get("/", response_model=OrderList)
+async def list_orders(page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=100),
+                      current_user: UserModel = Depends(get_current_user),
+                      db: AsyncSession = Depends(get_async_db)):
+    """
+    Возвращает заказы текущего пользователя с простой пагинацией.
+    """
+    total = await db.scalar(
+        select(func.count(OrderModel.id)).where(OrderModel.user_id == current_user.id)
+    )
+    result = await db.scalars(
+        select(OrderModel)
+        .options(selectinload(OrderModel.items).selectinload(OrderItemModel.product))
+        .where(OrderModel.user_id == current_user.id)
+        .order_by(OrderModel.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    orders = result.all()
+
+    return OrderList(items=orders, total=total or 0, page=page, page_size=page_size)
+
+
+@router.get("/{order_id}", response_model=OrderSchema)
+async def get_order(order_id: int, current_user: UserModel = Depends(get_current_user),
+                    db: AsyncSession = Depends(get_async_db)):
+    """
+    Возвращает детальную информацию по заказу, если он принадлежит пользователю.
+    """
+    order = await load_order_with_items(order_id, db)
+
+    if not order or order.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Заказ не найден")
+    return order

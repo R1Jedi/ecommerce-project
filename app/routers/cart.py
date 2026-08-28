@@ -1,5 +1,5 @@
 from decimal import Decimal
-from fastapi import APIRouter, Depends, Response, status, HTTPException
+from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -12,7 +12,7 @@ from app.schemas import (
     Cart as CartSchema,
     CartItem as CartItemSchema,
     CartItemCreate,
-    CartItemUpdate,
+    CartItemUpdate
 )
 
 router = APIRouter(
@@ -106,4 +106,3 @@ async def clear_cart(current_user: UserModel = Depends(get_current_user), db: As
     stmt = delete(CartItemModel).where(CartItemModel.user_id == current_user.id)
     await db.execute(stmt)
     await db.commit()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
