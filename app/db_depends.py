@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models import Category as CategoryModel, Product as ProductModel, User as UserModel, Review as ReviewModel, \
-    UserRole, CartItem as CartItemModel
+    UserRole, CartItem as CartItemModel, Order as OrderModel, OrderItem as OrderItemModel
 from app.database import async_session_maker
 
 
@@ -130,3 +130,16 @@ async def get_cart_item(user_id: int, product_id: int, db: AsyncSession) -> Cart
                                                                                     CartItemModel.product_id == product_id)
     cart = await db.scalar(stmt)
     return cart
+
+
+# Order
+async def load_order_with_items(order_id: int, db: AsyncSession) -> OrderModel | None:
+    stmt = (
+        select(OrderModel)
+        .options(
+            selectinload(OrderModel.items).selectinload(OrderItemModel.product),
+        )
+        .where(OrderModel.id == order_id)
+    )
+    order = await db.scalar(stmt)
+    return order
