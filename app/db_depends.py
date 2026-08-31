@@ -1,3 +1,4 @@
+import uuid
 from collections.abc import AsyncGenerator
 from pathlib import Path
 
@@ -147,7 +148,7 @@ async def load_order_with_items(order_id: int, db: AsyncSession) -> OrderModel |
 
 
 # StaticFile
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 MEDIA_ROOT = BASE_DIR / "media" / "products"
 MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
@@ -159,11 +160,13 @@ async def save_product_image(file: UploadFile) -> str:
     Сохраняет изображение товара и возвращает относительный URL.
     """
     if file.content_type not in ALLOWED_IMAGE_TYPES:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Only JPG, PNG or WebP images are allowed")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Только JPG, PNG или WebP формата")
 
     content = await file.read()
     if len(content) > MAX_IMAGE_SIZE:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Image is too large")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Изображение слишком большое")
 
     extension = Path(file.filename or "").suffix.lower() or ".jpg"
     file_name = f"{uuid.uuid4()}{extension}"
