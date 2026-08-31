@@ -36,7 +36,7 @@ class Product(Base):
             """,
             persisted=True,
         ),
-        nullable=False,
+        nullable=False
     )
 
     category_id: Mapped[int] = mapped_column(Integer, ForeignKey('categories.id'), nullable=False)
