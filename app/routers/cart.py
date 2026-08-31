@@ -92,12 +92,7 @@ async def remove_item_from_cart(product_id: int, current_user: UserModel = Depen
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Товар в корзине не найден")
 
-    if cart_item.quantity > 1:
-        cart_item.quantity -= 1
-        db.add(cart_item)
-    else:
-        await db.delete(cart_item)
-
+    await db.delete(cart_item)
     await db.commit()
 
 
