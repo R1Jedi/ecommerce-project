@@ -182,7 +182,9 @@ def remove_product_image(url: str | None) -> None:
     """
     if not url:
         return
+
     relative_path = url.lstrip("/")
     file_path = BASE_DIR / relative_path
+
     if file_path.exists():
         file_path.unlink()
