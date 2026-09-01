@@ -42,17 +42,10 @@ class ProductCreate(BaseModel):
     category_id: Annotated[int, Field(description="ID категории, к которой относится товар")]
 
     @classmethod
-    def as_form(cls, name: Annotated[str, Form()], price: Annotated[Decimal, Form()],
-                stock: Annotated[int, Form()],
+    def as_form(cls, name: Annotated[str, Form()], price: Annotated[Decimal, Form()], stock: Annotated[int, Form()],
                 category_id: Annotated[int, Form()],
                 description: Annotated[str | None, Form()] = None) -> "ProductCreate":
-        return cls(
-            name=name,
-            description=description,
-            price=price,
-            stock=stock,
-            category_id=category_id
-        )
+        return cls(name=name, description=description, price=price, stock=stock, category_id=category_id)
 
 
 class Product(ProductCreate):
