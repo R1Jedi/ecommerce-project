@@ -11,7 +11,7 @@ from app.database import Base
 class Product(Base):
     __tablename__ = 'products'
     __table_args__ = (
-        Index("ix_products_tsv_gin", "tsv", postgresql_using="gin")
+        Index("ix_products_tsv_gin", "tsv", postgresql_using="gin"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
