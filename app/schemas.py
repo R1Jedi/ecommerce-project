@@ -53,6 +53,7 @@ class Product(ProductCreate):
     Модель для ответа с данными товара.
     """
     id: Annotated[int, Field(description="Уникальный идентификатор товара")]
+    image_url: Annotated[str | None, Field(default=None, description="Адрес изображения")]
     rating: Annotated[float, Field(description="Рейтинг товара")]
     is_active: Annotated[bool, Field(description="Активность товара")]
     created_at: Annotated[datetime, Field(description="Дата добавления товара")]
