@@ -10,7 +10,8 @@ from app.db_depends import get_async_db, load_order_with_items
 from app.models.cart_items import CartItem as CartItemModel
 from app.models.orders import Order as OrderModel, OrderItem as OrderItemModel
 from app.models.users import User as UserModel
-from app.schemas import Order as OrderSchema, OrderList
+from app.payments import create_yookassa_payment
+from app.schemas import Order as OrderSchema, OrderList, OrderCheckoutResponse
 
 router = APIRouter(
     prefix="/orders",
@@ -18,7 +19,7 @@ router = APIRouter(
 )
 
 
-@router.post("/checkout", response_model=OrderSchema, status_code=status.HTTP_201_CREATED)
+@router.post("/checkout", response_model=OrderCheckoutResponse, status_code=status.HTTP_201_CREATED)
 async def checkout_order(current_user: UserModel = Depends(get_current_user), db: AsyncSession = Depends(get_async_db)):
     """
     Создаёт заказ на основе текущей корзины пользователя.
@@ -49,6 +50,9 @@ async def checkout_order(current_user: UserModel = Depends(get_current_user), db
                                 detail=f"Недостаточное количество {product.name} для заказа")
 
         unit_price = product.price
+        if unit_price is None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=f"Товар {product.name} не имеет установленной цены")
         total_price = unit_price * cart_item.quantity
         total_amount += total_price
 
@@ -64,6 +68,26 @@ async def checkout_order(current_user: UserModel = Depends(get_current_user), db
 
     order.total_amount = total_amount
     db.add(order)
+
+    try:
+        await db.flush()
+        payment_info = await create_yookassa_payment(
+            order_id=order.id,
+            amount=order.total_amount,
+            user_email=current_user.email,
+            description=f"Оплата заказа #{order.id}",
+        )
+    except RuntimeError as exc:
+        await db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=str(exc)) from exc
+    except Exception as exc:
+        print(exc)
+        await db.rollback()
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY,
+                            detail="Не удалось инициировать оплату") from exc
+
+    order.payment_id = payment_info.get("id")
 
     await db.execute(delete(CartItemModel).where(CartItemModel.user_id == current_user.id))
     await db.commit()

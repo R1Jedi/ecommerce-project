@@ -165,67 +165,93 @@ class CartItemBase(BaseModel):
     Базовая модель с общими полями для корзин.
     Сама по себе в роутерах не используется.
     """
-    product_id: int = Field(description="ID товара")
-    quantity: int = Field(ge=1, description="Количество товара")
+    product_id: Annotated[int, Field(description="ID товара")]
+    quantity: Annotated[int, Field(ge=1, description="Количество товара")]
 
 
 class CartItemCreate(CartItemBase):
-    """Модель для добавления нового товара в корзину."""
+    """
+    Модель для добавления нового товара в корзину.
+    """
     pass
 
 
 class CartItemUpdate(BaseModel):
-    """Модель для обновления количества товара в корзине."""
-    quantity: int = Field(ge=1, description="Новое количество товара")
+    """
+    Модель для обновления количества товара в корзине.
+    """
+    quantity: Annotated[int, Field(ge=1, description="Новое количество товара")]
 
 
 class CartItem(BaseModel):
-    """Товар в корзине с данными продукта."""
-    id: int = Field(description="ID позиции корзины")
-    quantity: int = Field(ge=1, description="Количество товара")
-    product: Product = Field(description="Информация о товаре")
+    """
+    Товар в корзине с данными продукта.
+    """
+    id: Annotated[int, Field(description="ID позиции корзины")]
+    quantity: Annotated[int, Field(ge=1, description="Количество товара")]
+    product: Annotated[Product, Field(description="Информация о товаре")]
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class Cart(BaseModel):
-    """Полная информация о корзине пользователя."""
-    user_id: int = Field(description="ID пользователя")
-    items: list[CartItem] = Field(default_factory=list, description="Содержимое корзины")
-    total_quantity: int = Field(ge=0, description="Общее количество товаров")
-    total_price: Decimal = Field(ge=0, description="Общая стоимость товаров")
+    """
+    Полная информация о корзине пользователя.
+    """
+    user_id: Annotated[int, Field(description="ID пользователя")]
+    items: Annotated[list[CartItem], Field(description="Содержимое корзины")] = Field(default_factory=list)
+    total_quantity: Annotated[int, Field(ge=0, description="Общее количество товаров")]
+    total_price: Annotated[Decimal, Field(ge=0, description="Общая стоимость товаров")]
 
     model_config = ConfigDict(from_attributes=True)
 
 
 # Orders
 class OrderItem(BaseModel):
-    id: int = Field(description="ID позиции заказа")
-    product_id: int = Field(description="ID товара")
-    quantity: int = Field(ge=1, description="Количество")
-    unit_price: Decimal = Field(ge=0, description="Цена за единицу на момент покупки")
-    total_price: Decimal = Field(ge=0, description="Сумма по позиции")
-    product: Product | None = Field(None, description="Полная информация о товаре")
+    """
+    Товарная позиция внутри конкретного заказа с фиксацией цены на момент покупки.
+    """
+    id: Annotated[int, Field(description="ID позиции заказа")]
+    product_id: Annotated[int, Field(description="ID товара")]
+    quantity: Annotated[int, Field(ge=1, description="Количество")]
+    unit_price: Annotated[Decimal, Field(ge=0, description="Цена за единицу на момент покупки")]
+    total_price: Annotated[Decimal, Field(ge=0, description="Сумма по позиции")]
+    product: Annotated[Product | None, Field(description="Полная информация о товаре")] = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class Order(BaseModel):
-    id: int = Field(description="ID заказа")
-    user_id: int = Field(description="ID пользователя")
-    status: str = Field(description="Текущий статус заказа")
-    total_amount: Decimal = Field(ge=0, description="Общая стоимость")
-    created_at: datetime = Field(description="Когда заказ был создан")
-    updated_at: datetime = Field(description="Когда последний раз обновлялся")
-    items: list[OrderItem] = Field(default_factory=list, description="Список позиций")
+    """
+    Информация о заказе пользователя, его статусе и купленных товарах.
+    """
+    id: Annotated[int, Field(description="ID заказа")]
+    user_id: Annotated[int, Field(description="ID пользователя")]
+    status: Annotated[str, Field(description="Текущий статус заказа")]
+    total_amount: Annotated[Decimal, Field(ge=0, description="Общая стоимость")]
+    created_at: Annotated[datetime, Field(description="Когда заказ был создан")]
+    updated_at: Annotated[datetime, Field(description="Когда последний раз обновлялся")]
+    items: Annotated[list[OrderItem], Field(description="Список позиций")] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class OrderList(BaseModel):
-    items: list[Order] = Field(description="Заказы на текущей странице")
-    total: int = Field(ge=0, description="Общее количество заказов")
-    page: int = Field(ge=1, description="Текущая страница")
-    page_size: int = Field(ge=1, description="Размер страницы")
+    """
+    Список заказов с поддержкой пагинации.
+    """
+    items: Annotated[list[Order], Field(description="Заказы на текущей странице")]
+    total: Annotated[int, Field(ge=0, description="Общее количество заказов")]
+    page: Annotated[int, Field(ge=1, description="Текущая страница")]
+    page_size: Annotated[int, Field(ge=1, description="Размер страницы")]
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# YooKassa
+class OrderCheckoutResponse(BaseModel):
+    """
+    Ответ сервера после успешного оформления заказа, содержащий данные заказа и ссылку на оплату.
+    """
+    order: Annotated[Order, Field(description="Созданный заказ")]
+    confirmation_url: Annotated[str | None, Field(None, description="URL для перехода на оплату в YooKassa")]
