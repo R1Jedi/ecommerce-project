@@ -1,16 +1,16 @@
-from decimal import Decimal  # Точная работа с деньгами (избегаем float-ошибок)
+from decimal import Decimal
 from typing import Any
 from uuid import uuid4  # Для уникального idempotence_key (предотвращает дубли платежей)
 
-from anyio import to_thread  # Для запуска синхронного кода в async (FastAPI)
-from yookassa import Configuration, Payment  # библиотека YooKassa
+from anyio import to_thread
+from yookassa import Configuration, Payment
 
 from app.config import YOOKASSA_RETURN_URL, YOOKASSA_SECRET_KEY, YOOKASSA_SHOP_ID
 
 
-async def create_yookassa_payment(  # Асинхронная функция (для FastAPI)
+async def create_yookassa_payment(
     *,  # Только именованные аргументы
-    order_id: int,  # ID заказа из вашей БД
+    order_id: int,
     amount: Decimal,  # Сумма (Decimal для точности, напр. Decimal('100.00'))
     user_email: str,  # Email для чека
     description: str,  # Описание (напр. "Оплата заказа №123")
@@ -24,8 +24,7 @@ async def create_yookassa_payment(  # Асинхронная функция (д�
     Configuration.account_id = YOOKASSA_SHOP_ID
     Configuration.secret_key = YOOKASSA_SECRET_KEY
 
-    # 3. ФОРМИРОВАНИЕ PAYLOAD — ГЛАВНАЯ ЧАСТЬ!
-    # Это JSON для POST /v3/payments.
+    # 3. Это JSON для POST /v3/payments.
     payload = {
         "amount": {  # Сумма платежа
             "value": f"{amount:.2f}",  # str(Decimal) — обязательно строка! "100.00"
@@ -46,9 +45,8 @@ async def create_yookassa_payment(  # Асинхронная функция (д�
             },
             "items": [
             # Список "товаров"/услуг (здесь 1 item = весь наш заказ)
-            #Но также мы можем передать и каждую позицию отдельно.
                 {
-                    "description": description[:128],  # Макс. 128 символов!
+                    "description": description[:128],
                     "quantity": "1.00",  # Кол-во (строка)
                     "amount": {  # Сумма item
                         "value": f"{amount:.2f}",
