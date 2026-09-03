@@ -5,17 +5,23 @@ from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(
     title="FastAPI Интернет-магазин",
-    version='0.5.0',
+    version='0.5.0'
 )
 
-app.include_router(categories.router)
-app.include_router(products.router)
-app.include_router(users.router)
-app.include_router(reviews.router)
-app.include_router(cart.router)
-app.include_router(orders.router)
-app.include_router(payments.router)
-
+# app_v1 = FastAPI(
+#     title="FastAPI Интернет-магазин — API v1",
+#     version="0.5.0"
+# )
+#
+# app_v1.include_router(categories.router)
+# app_v1.include_router(products.router)
+# app_v1.include_router(users.router)
+# app_v1.include_router(reviews.router)
+# app_v1.include_router(cart.router)
+# app_v1.include_router(orders.router)
+# app_v1.include_router(payments.router)
+#
+# app.mount("/v1", app_v1)
 app.mount("/media", StaticFiles(directory="media"), name="media")
 
 
