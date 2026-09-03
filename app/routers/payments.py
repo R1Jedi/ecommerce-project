@@ -1,7 +1,6 @@
 import ipaddress
 import json
 from datetime import datetime, timezone
-from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
