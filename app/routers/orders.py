@@ -11,7 +11,7 @@ from app.models.cart_items import CartItem as CartItemModel
 from app.models.orders import Order as OrderModel, OrderItem as OrderItemModel
 from app.models.users import User as UserModel
 from app.payments import create_yookassa_payment
-from app.schemas import Order as OrderSchema, OrderList, OrderCheckoutResponse
+from app.schemas import Order as OrderSchema, OrderList, OrderCheckoutResponse, OrderStatus
 
 router = APIRouter(
     prefix="/orders",
@@ -97,7 +97,7 @@ async def checkout_order(current_user: UserModel = Depends(get_current_user), db
     if not created_order:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail="Ошибка загрузки созданного заказа")
-    return created_order
+    return OrderCheckoutResponse(order=created_order, confirmation_url=payment_info.get("confirmation_url"))
 
 
 @router.get("/", response_model=OrderList)
@@ -135,3 +135,24 @@ async def get_order(order_id: int, current_user: UserModel = Depends(get_current
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Заказ не найден")
     return order
+
+
+@router.get("/{order_id}/status", response_model=OrderStatus)
+async def get_order(order_id: int, current_user: UserModel = Depends(get_current_user),
+                    db: AsyncSession = Depends(get_async_db)):
+    """
+    Возвращает статус заказа.
+    """
+    order = await load_order_with_items(order_id, db)
+
+    if not order or order.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Заказ не найден")
+
+    message = "Оплата в процессе..."
+    if order.status == "paid":
+        message = f"Спасибо! Заказ {order.id} оплачен. Ожидайте доставку."
+    elif order.status == "canceled" or order.status == "failed":
+        message = f"Оплата не прошла. Попробуйте ещё раз."
+
+    return OrderStatus(order_id=order.id, status=order.status, paid_at=order.paid_at, message=message)

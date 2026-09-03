@@ -248,6 +248,16 @@ class OrderList(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class OrderStatus(BaseModel):
+    """
+    Статус заказа.
+    """
+    order_id: Annotated[int, Field(description="ID заказа")]
+    status: Annotated[str, Field(description="Статус заказа")]
+    paid_at: Annotated[datetime | None, Field(default=None, description="Дата оплаты")]
+    message: Annotated[str, Field(description="Сообщение к заказу")]
+
+
 # YooKassa
 class OrderCheckoutResponse(BaseModel):
     """
