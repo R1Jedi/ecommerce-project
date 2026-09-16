@@ -139,6 +139,18 @@ class ReviewBase(BaseModel):
     comment: Annotated[str | None, Field(default=None, description='Комментарий к отзыву о товаре')]
 
 
+class ReviewFilterParams(BaseModel):
+    """
+    Схема параметров фильтрации и пагинации отзывов
+    """
+    product_id: Annotated[int | None, Field(None, description="ID товара")]
+    grade: Annotated[int | None, Field(None, ge=1, le=5, description="Фильтр по оценке товара (от 1 до 5)")]
+    date_from: Annotated[date | None, Field(None, description="Искать отзывы, начиная с этой даты (ГГГГ-ММ-ДД)")]
+    date_to: Annotated[date | None, Field(None, description="Искать отзывы по эту дату включительно (ГГГГ-ММ-ДД)")]
+    page: Annotated[int, Field(1, ge=1, description="Номер запрашиваемой страницы (начиная с 1)")]
+    page_size: Annotated[int, Field(10, ge=1, le=100, description="Количество отзывов на одной странице")]
+
+
 class ReviewCreate(ReviewBase):
     """
     Модель для создания отзыва.

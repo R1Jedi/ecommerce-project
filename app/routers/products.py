@@ -11,12 +11,11 @@ from app.models import Product as ProductModel, User as UserModel, Review as Rev
 from app.schemas import Product as ProductSchema, ProductCreate, Review as ReviewSchema, ProductList, ProductFilter
 
 router = APIRouter(
-    prefix="/products",
-    tags=["products"]
+    prefix="/products"
 )
 
 
-@router.get("/", response_model=ProductList, status_code=status.HTTP_200_OK)
+@router.get("/", response_model=ProductList, status_code=status.HTTP_200_OK, tags=["products"])
 async def get_all_products(request: Annotated[ProductFilter, Query()], db: AsyncSession = Depends(get_async_db)):
     """
     Возвращает список всех товаров с поддержкой фильтров.
@@ -93,7 +92,7 @@ async def get_all_products(request: Annotated[ProductFilter, Query()], db: Async
     }
 
 
-@router.post("/", response_model=ProductSchema, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=ProductSchema, status_code=status.HTTP_201_CREATED, tags=["products"])
 async def create_product(product: ProductCreate = Depends(ProductCreate.as_form), image: UploadFile | None = File(None),
                          current_user: UserModel = Depends(get_current_seller),
                          db: AsyncSession = Depends(get_async_db)):
@@ -111,7 +110,7 @@ async def create_product(product: ProductCreate = Depends(ProductCreate.as_form)
     return new_product
 
 
-@router.get("/{product_id}/reviews", response_model=list[ReviewSchema], status_code=status.HTTP_200_OK)
+@router.get("/{product_id}/reviews", response_model=list[ReviewSchema], status_code=status.HTTP_200_OK, tags=["products"])
 async def get_reviews_by_product_id(product_id: int, db: AsyncSession = Depends(get_async_db)):
     """
     Получение всех отзывов о конкретном товаре
@@ -126,7 +125,7 @@ async def get_reviews_by_product_id(product_id: int, db: AsyncSession = Depends(
     return reviews
 
 
-@router.get("/{product_id}", response_model=ProductSchema, status_code=status.HTTP_200_OK)
+@router.get("/{product_id}", response_model=ProductSchema, status_code=status.HTTP_200_OK, tags=["products"])
 async def get_product(product: ProductModel = Depends(get_product_by_id),
                       db: AsyncSession = Depends(get_async_db)) -> ProductModel:
     """
@@ -136,7 +135,7 @@ async def get_product(product: ProductModel = Depends(get_product_by_id),
     return product
 
 
-@router.put("/{product_id}", response_model=ProductSchema, status_code=status.HTTP_200_OK)
+@router.put("/{product_id}", response_model=ProductSchema, status_code=status.HTTP_200_OK, tags=["products"])
 async def update_product(product_updated: ProductCreate = Depends(ProductCreate.as_form),
                          product: ProductModel = Depends(get_product_by_id),
                          image: UploadFile | None = File(None),
@@ -164,7 +163,7 @@ async def update_product(product_updated: ProductCreate = Depends(ProductCreate.
     return product
 
 
-@router.delete("/{product_id}", status_code=status.HTTP_200_OK)
+@router.delete("/{product_id}", status_code=status.HTTP_200_OK, tags=["products"])
 async def delete_product(product: ProductModel = Depends(get_product_by_id),
                          current_user: UserModel = Depends(get_current_seller),
                          db: AsyncSession = Depends(get_async_db)) -> dict:

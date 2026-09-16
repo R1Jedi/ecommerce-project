@@ -8,12 +8,11 @@ from app.models import Category as CategoryModel, User as UserModel
 from app.schemas import Category as CategorySchema, CategoryCreate
 
 router = APIRouter(
-    prefix="/categories",
-    tags=["categories"]
+    prefix="/categories"
 )
 
 
-@router.get("/", response_model=list[CategorySchema], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=list[CategorySchema], status_code=status.HTTP_200_OK, tags=["categories"])
 async def get_all_categories(db: AsyncSession = Depends(get_async_db)):
     """
     Возвращает список всех категорий товаров.
@@ -24,7 +23,7 @@ async def get_all_categories(db: AsyncSession = Depends(get_async_db)):
     return categories
 
 
-@router.post("/", response_model=CategorySchema, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=CategorySchema, status_code=status.HTTP_201_CREATED, tags=["categories"])
 async def create_category(category: CategoryCreate, current_user: UserModel = Depends(get_current_admin),
                           db: AsyncSession = Depends(get_async_db)) -> CategoryModel:
     """
@@ -38,7 +37,7 @@ async def create_category(category: CategoryCreate, current_user: UserModel = De
     return db_category
 
 
-@router.put("/{category_id}", response_model=CategorySchema, status_code=status.HTTP_200_OK)
+@router.put("/{category_id}", response_model=CategorySchema, status_code=status.HTTP_200_OK, tags=["categories"])
 async def update_category(category_updated: CategoryCreate, db_category: CategoryModel = Depends(get_category_by_id),
                           current_user: UserModel = Depends(get_current_admin),
                           db: AsyncSession = Depends(get_async_db)) -> CategoryModel:
@@ -51,7 +50,7 @@ async def update_category(category_updated: CategoryCreate, db_category: Categor
     return db_category
 
 
-@router.delete("/{category_id}", status_code=status.HTTP_200_OK)
+@router.delete("/{category_id}", status_code=status.HTTP_200_OK, tags=["categories"])
 async def delete_category(category: CategoryModel = Depends(get_category_by_id),
                           current_user: UserModel = Depends(get_current_admin),
                           db: AsyncSession = Depends(get_async_db)) -> dict:

@@ -35,8 +35,9 @@ async def log_middleware(request: Request, call_next):
 #     version="0.5.0"
 # )
 
+categories.router.include_router(products.router)
 app.include_router(categories.router)
-app.include_router(products.router)
+
 app.include_router(users.router)
 app.include_router(reviews.router)
 app.include_router(cart.router)
