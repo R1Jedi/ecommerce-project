@@ -2,7 +2,7 @@ import uuid
 from collections.abc import AsyncGenerator
 from pathlib import Path
 
-from fastapi import Depends, HTTPException, status, UploadFile
+from fastapi import Depends, HTTPException, status, UploadFile, Request
 from pydantic import EmailStr
 from sqlalchemy import exists, select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,15 +10,16 @@ from sqlalchemy.orm import selectinload
 
 from app.models import Category as CategoryModel, Product as ProductModel, User as UserModel, Review as ReviewModel, \
     UserRole, CartItem as CartItemModel, Order as OrderModel, OrderItem as OrderItemModel
-from app.database import async_session_maker
 
 
 # DataBase
-async def get_async_db() -> AsyncGenerator[AsyncSession, None]:
+async def get_async_db(request: Request) -> AsyncGenerator[AsyncSession, None]:
     """
     Предоставляет асинхронную сессию SQLAlchemy для работы с базой данных PostgreSQL.
     """
-    async with async_session_maker() as session:
+    session_maker = request.app.state.session_maker
+
+    async with session_maker() as session:
         yield session
 
 

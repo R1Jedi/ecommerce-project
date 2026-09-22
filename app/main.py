@@ -1,17 +1,37 @@
+from contextlib import asynccontextmanager
 from uuid import uuid4
 
 from fastapi import FastAPI, Request
 from loguru import logger
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
+from app.config import DATABASE_URL
 from app.routers import categories, products, users, reviews, cart, orders, payments
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        engine = create_async_engine(DATABASE_URL, echo=True)
+        session_maker = async_sessionmaker(bind=engine, expire_on_commit=False)
+
+        app.state.session_maker = session_maker
+        yield
+    finally:
+        await engine.dispose()
+
+
+# Главное приложение
 app = FastAPI(
     title="FastAPI Интернет-магазин",
-    version='0.5.0'
+    version='0.5.0',
+    lifespan=lifespan
 )
 
+
+# Логи
 logger.add("info.log", format="Log: [{extra[log_id]}:{time} - {level} - {message}]", level="INFO", enqueue=True)
 
 
@@ -35,6 +55,7 @@ async def log_middleware(request: Request, call_next):
 #     version="0.5.0"
 # )
 
+# Подключение ручек
 categories.router.include_router(products.router)
 app.include_router(categories.router)
 
@@ -44,6 +65,7 @@ app.include_router(cart.router)
 app.include_router(orders.router)
 app.include_router(payments.router)
 
+# Привязка медиа
 # app.mount("/v1", app_v1)
 app.mount("/media", StaticFiles(directory="media"), name="media")
 
