@@ -5,7 +5,7 @@ from uuid import uuid4  # Для уникального idempotence_key (пре�
 from anyio import to_thread
 from yookassa import Configuration, Payment
 
-from app.config import YOOKASSA_RETURN_URL, YOOKASSA_SECRET_KEY, YOOKASSA_SHOP_ID
+from app.config import YOOKASSA_RETURN_URL, YOOKASSA_SECRET_KEY, YOOKASSA_SHOP_ID, settings
 
 
 async def create_yookassa_payment(
@@ -17,12 +17,12 @@ async def create_yookassa_payment(
 ) -> dict[str, Any]:  # Возврат: {'id': '...', 'status': '...', 'confirmation_url': '...'}
 
     # 1. Проверка настроек (fallback на ошибку)
-    if not YOOKASSA_SHOP_ID or not YOOKASSA_SECRET_KEY:
+    if not settings.yookassa_shop_id or not settings.yookassa_secret_key:
         raise RuntimeError("Задайте YOOKASSA_SHOP_ID и YOOKASSA_SECRET_KEY в .env")
 
     # 2. Глобальная настройка SDK (Basic Auth под капотом)
-    Configuration.account_id = YOOKASSA_SHOP_ID
-    Configuration.secret_key = YOOKASSA_SECRET_KEY
+    Configuration.account_id = settings.yookassa_shop_id
+    Configuration.secret_key = settings.yookassa_secret_key
 
     # 3. Это JSON для POST /v3/payments.
     payload = {
@@ -32,7 +32,7 @@ async def create_yookassa_payment(
         },
         "confirmation": {  # Как подтвердить платеж
             "type": "redirect",  # Пользователь редиректится на форму YooKassa
-            "return_url": YOOKASSA_RETURN_URL,  # Куда вернуть после оплаты
+            "return_url": settings.yookassa_return_url,  # Куда вернуть после оплаты
         },
         "capture": True,  # Авто-списание денег после авторизации
         "description": description,  # Видно пользователю в истории

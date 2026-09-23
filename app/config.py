@@ -1,16 +1,33 @@
-import os
-from dotenv import load_dotenv
+from functools import lru_cache
+from typing import Literal
+from pydantic import HttpUrl
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-load_dotenv()
 
-# Auth
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = "HS256"
+class Settings(BaseSettings):
+    # Auth
+    secret_key: str = "super_insecure_default_key"
+    algorithm: str = "HS256"
 
-# Database
-DATABASE_URL = os.getenv("DATABASE_URL")
+    # Database
+    database_url: str = "sqlite:///./local.db"
 
-# YooKassa
-YOOKASSA_SHOP_ID = os.getenv("YOOKASSA_SHOP_ID")
-YOOKASSA_SECRET_KEY = os.getenv("YOOKASSA_SECRET_KEY")
-YOOKASSA_RETURN_URL = os.getenv("YOOKASSA_RETURN_URL", "http://localhost:8000/")
+    # YooKassa
+    yookassa_shop_id: str | None = None
+    yookassa_secret_key: str | None = None
+    yookassa_return_url: HttpUrl = "http://localhost:8000/"
+
+    # Конфигурация Pydantic Settings
+    model_config = SettingsConfigDict(
+        env_file="../.env",
+        env_file_encoding="utf-8",
+        extra="ignore"
+    )
+
+
+@lru_cache()
+def get_settings() -> Settings:
+    return Settings()
+
+
+settings = get_settings()
